@@ -26,9 +26,25 @@ function closeCreatePostModal() {
   createPostArea.style.display = 'none';
 }
 
+function onSaveButtonClicked(event){
+  if('caches' in window){
+    caches.open('user-requested')
+    .then(cache => {
+      cache.add('https://httpbin.org/get');
+      cache.add('/src/images/sf-boat.jpg');
+    });
+  }
+ }
+
 shareImageButton.addEventListener('click', openCreatePostModal);
 
 closeCreatePostModalButton.addEventListener('click', closeCreatePostModal);
+
+function clearCards(){
+ while(sharedMomentsArea.hasChildNodes()){
+   sharedMomentsArea.removeChild(sharedMomentsArea.lastChild);
+ }
+}
 
 function createCard() {
   var cardWrapper = document.createElement('div');
@@ -47,15 +63,43 @@ function createCard() {
   cardSupportingText.className = 'mdl-card__supporting-text';
   cardSupportingText.textContent = 'In San Francisco';
   cardSupportingText.style.textAlign = 'center';
+  // var cardSaveButon = document.createElement('button');
+  // cardSupportingText.appendChild(cardSaveButon);
+  // cardSaveButon.textContent = 'Save';
   cardWrapper.appendChild(cardSupportingText);
   componentHandler.upgradeElement(cardWrapper);
   sharedMomentsArea.appendChild(cardWrapper);
+
+  cardSaveButon.addEventListener('click', onSaveButtonClicked);
 }
 
-fetch('https://httpbin.org/get')
-  .then(function(res) {
-    return res.json();
+var url = 'https://httpbin.org/get';
+var networkDataReceived = false;
+
+fetch(url)
+.then(function(res) {
+  return res.json();
+})
+.then(function(data) {
+  networkDataReceived = true;
+  clearCards();
+  createCard();
+});
+
+
+if('caches' in window){
+  caches.match(url)
+  .then(response => {
+    if(response){
+      return response.json();
+    }
   })
-  .then(function(data) {
-    createCard();
-  });
+  .then(data => {
+    if(!networkDataReceived){
+      clearCards();
+      createCard();
+    } 
+  })
+}
+
+
